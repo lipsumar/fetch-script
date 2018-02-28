@@ -5,7 +5,7 @@
 > fetch-script allows to fetch APIs and output in a very succinct manner
 
 ## Usage
-<!--
+
 ### As a cli tool
 
 First install the cli tool
@@ -16,22 +16,19 @@ npm i -g fetch-script-cli
 Then you can use it in the following ways:
 
 ```bash
-# execute a single command
-fetch-script "/api/rest/foo/1"
+# execute a script
+fetch-script path/to/script.fetch-script
 
 # start an interactive session
 fetch-script
-
-# execute a script
-fetch-script path/to/script.fetch-script
 ```
--->
+
 ## As a node module
 
 First install the module
 
 ```bash
-npm i fetch-script
+npm install fetch-script
 ```
 
 ```js
@@ -73,8 +70,28 @@ new FetchScript({
 Execute one or mutiple commands. See examples.
 
 
+### Events
+
+#### `out`
+Equivalent of stdout.
+
+Example:
+```js
+{
+  resource: "/api/user/1",
+  data: {id: 1, name: "Michael"}
+}
+```
 
 
+#### `error`
+Equivalent of stderr.
 
-
+Example:
+```js
+{
+  resource: "/api/user/1",
+  error: <Error object>
+}
+```
 
