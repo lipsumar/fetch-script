@@ -31,11 +31,11 @@ fetch-script path/to/script.fetch-script
 First install the module
 
 ```bash
-npm i -g fetch-script
+npm i fetch-script
 ```
 
 ```js
-const FetchScript = require("../src");
+const FetchScript = require("fetch-script");
 const fetchScript = new FetchScript({
   apis: {
     jph: { baseUrl: "http://jsonplaceholder.typicode.com" }
