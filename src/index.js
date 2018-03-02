@@ -17,6 +17,13 @@ module.exports = class FetchScript extends EventEmitter {
     this.vars = {};
   }
 
+  executeCode(code) {
+    return this.execute(
+      code.split('\n')
+        .filter(p => p.trim() !== '')
+    )
+  }
+
   execute(paths) {
     paths = paths instanceof Array ? paths : [paths];
 
