@@ -1,0 +1,22 @@
+$options.apis.sample.baseURL = "http://jsonplaceholder.typicode.com"
+
+# assign a string
+a = "foo is bar"
+
+# assign a variable
+b = a
+
+# assign js
+c = a + ' and it smells nice'
+
+# assign a resource
+u = /sample/users/1
+us = /sample/users/
+
+# assign an expanded resource
+all = /sample/users/{us[*].id}
+
+# assign expanded string
+ex = {us[*].name} has id {us[*].id}
+
+> ex
