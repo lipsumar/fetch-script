@@ -44,7 +44,10 @@ module.exports = {
       tokens.push(this.createCodeToken(codeString))
       tokens.push('EOL')
     })
-    
+
+    lexer.addRule(/die\(\)/, () => {
+      tokens.push({type:'die'})
+    })
 
     try {
       lexer.setInput(code).lex()

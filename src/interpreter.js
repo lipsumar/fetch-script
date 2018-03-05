@@ -87,11 +87,11 @@ module.exports = {
   runSubAssignment(symbol, subsymbol, statement) {
     const toAssign = this.vars[symbol]
     return Promise.all(
-      toAssign.map((a, i) => {
+      Promise.resolve(toAssign).map((a, i) => {
         const replacedStatement = Object.assign({}, statement)
         replacedStatement.value = statement.value.replace(/@/, symbol + '[' + i + ']')
         return this.runStatement(replacedStatement)
-      })
+      }, {concurrency:10})
     ).then(results => {
       toAssign.forEach((a, i) => {
         toAssign[i][subsymbol] = results[i]
@@ -106,14 +106,13 @@ module.exports = {
     const resourceParts = resource.split(' ')
     resource = resourceParts[0]
     const paginationMode = resourceParts[1]
-    console.log('runResource', resource)
+    console.log('-> ', resource)
     const expanded = this.expandResources([resource])
     const resourceConfig = this.resourceToRequest(resource)
     if (resourceConfig.paginator && paginationMode!=='1') {
       if (expanded.length > 1) {
         throw new Error('can not paginate an expanded resource')
       }
-      
       return this.resource(expanded[0]).then(data => {
         const dataOri = data
         //console.log('pushing to list', list.length)
@@ -125,10 +124,15 @@ module.exports = {
         if (typeof data !== 'undefined') {
           list = list.concat(data)
         }
+        if (paginationMode && list.length >= paginationMode) {
+          console.log('LIMIT of '+paginationMode+' reached')
+          return list.slice(0, paginationMode)
+
+        }
         const nextResource = resourceConfig.paginator(dataOri)
         console.log('next res', nextResource)
         if (nextResource) {
-          return this.runResource(nextResource, list)
+          return this.runResource(nextResource + ' ' + paginationMode, list)
         } else {
           console.log('returning list', list.length)
           return list
@@ -137,7 +141,7 @@ module.exports = {
       
     } else {
       return Promise.all(
-        expanded.map(this.resource.bind(this))
+        Promise.resolve(expanded).map(this.resource.bind(this), {concurrency: 10})
       ).then(res => {
         return expanded.length === 1 ? res[0] : new TypeList(res)
       }) 
@@ -152,11 +156,22 @@ module.exports = {
 
   runJavascript(jsCode, sync = false) {
     const args = Object.keys(this.vars)
+    args.push('require')
     args.push('return ' + jsCode)
     const argv = Object.keys(this.vars).map(n => this.vars[n])
+    argv.push(require)
+    //console.log(jsCode)
+    let out = null
     const f = new Function(...args)
-    if (sync) return f(...argv)
-    return Promise.resolve(f(...argv))
+    try {
+      out = f(...argv)
+    } catch (err) {
+      console.log(err.message)
+      console.log('Executing:', jsCode)
+    }
+    
+    if (sync) return out
+    return Promise.resolve(out)
   },
 
   expandResources(resources) {
@@ -239,9 +254,19 @@ module.exports = {
 
   resource(resource) {
     const req = this.resourceToRequest(resource)
+    if (req.module) {
+      const resParts = resource.split('?')
+      let params = {}
+      if (resParts[1]) {
+        params = resParts[1].split('&').map(kv => kv.split('=')).reduce((m, kv) => {
+          m[kv[0]] = kv[1]
+          return m
+        },{})
+      }
+      return req.module({params})
+    }
     //console.log('request->', req)
     return axios.request(req).then(data => {
-
       if (typeof data.data === 'string' && data.data[0] === '<') { // smells like xml
         return new Promise((resolve,reject) => {
           parseXML(data.data, (err, parsed) => {
