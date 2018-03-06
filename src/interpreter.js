@@ -1,4 +1,5 @@
 const Promise = require("bluebird");
+const EventEmitter = require("events");
 const lib = require("./lib");
 const deepGetSet = require("deep-get-set");
 const jsonpath = require("jsonpath");
@@ -13,14 +14,19 @@ const ProgressBar = require('progress');
 
 
 
-module.exports = {
-  vars: {},
+module.exports = class FetchScriptInterpreter extends EventEmitter {
+  
+  constructor() {
+    super();
+    this.vars = {}
+  }
+
   interpret(ast, opts) {
     this.opts = opts
     if (ast.type === "statements") {
       return this.runStatements(ast.statements).catch(err => console.log(err))
     }
-  },
+  }
 
   runStatements(statements) {
     let i = 0
@@ -36,7 +42,7 @@ module.exports = {
       })
     }
     return next()
-  },
+  }
 
   runStatement(statement) {
     switch (statement.type) {
@@ -79,12 +85,12 @@ module.exports = {
       default:
         return Promise.resolve(statement.value)  
     }
-  },
+  }
 
   runAssignment(statement) {
     this.lastAssignedSymbol = statement.symbol
     return this.assign(statement.symbol, statement.value)
-  },
+  }
 
   runSubAssignment(symbol, subsymbol, statement) {
     const toAssign = this.vars[symbol]
@@ -110,7 +116,7 @@ module.exports = {
     return this.runStatement(statement).then(out => {
       this.vars[symbol][subsymbol] = out
     })
-  },
+  }
 
   runResource(resource, list = new TypeList()) {
     const resourceParts = resource.split(' ')
@@ -157,12 +163,12 @@ module.exports = {
       }) 
     }
 
-  },
+  }
 
   runString(string) {
     const expanded = this.expandResources([string])
     return Promise.resolve(expanded.length===1 ? expanded[0] : expanded)
-  },
+  }
 
   runJavascript(jsCode, sync = false) {
     const args = Object.keys(this.vars)
@@ -182,14 +188,14 @@ module.exports = {
     
     if (sync) return out
     return Promise.resolve(out)
-  },
+  }
 
   expandResources(resources) {
     while (resources.filter(r => lib.hasVariables(r)).length > 0) {
       resources = this.insertVariables(resources);
     }
     return resources
-  },
+  }
 
   insertVariables(strs) {
     let inserteds = [];
@@ -213,7 +219,7 @@ module.exports = {
       inserteds = inserteds.concat(inserted);
     });
     return inserteds;
-  },
+  }
 
   mergeOutputArrays(outs) {
     const arrayMaster = outs.find(o => o instanceof Array)
@@ -225,7 +231,7 @@ module.exports = {
         return o
       })
     })
-  },
+  }
 
   resolveExpression(expression, sync = false) {
     // expression is simply a variable name
@@ -240,7 +246,7 @@ module.exports = {
       if (sync) return values.filter(lib.uniqueFilter)
       return Promise.resolve(values.filter(lib.uniqueFilter));  
     } catch (err) { }
-  },
+  }
 
 
   assign(symbol, statement) {
@@ -254,13 +260,13 @@ module.exports = {
       }
       
     })
-  },
+  }
 
   symbol(symbol) {
     return Promise.resolve(
       typeof this.vars[symbol] !== 'undefined' ? this.vars[symbol] : symbol
     )
-  },
+  }
 
   resource(resource) {
     const req = this.resourceToRequest(resource)
@@ -287,8 +293,11 @@ module.exports = {
       }
 
       return data.data;
+    }).then(out => {
+      this.emit('resource', {resource, out})
+      return out
     })
-  },
+  }
 
   resourceToRequest(resource) {
     const parts = resource.split("/");
