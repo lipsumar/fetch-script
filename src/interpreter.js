@@ -9,6 +9,8 @@ const xmlParser = new xml2js.Parser()
 const parseXML = xmlParser.parseString
 const TypeList = require('./types/List')
 const stringLexer = require('./lexer.old')
+const ProgressBar = require('progress');
+
 
 
 module.exports = {
@@ -86,13 +88,21 @@ module.exports = {
 
   runSubAssignment(symbol, subsymbol, statement) {
     const toAssign = this.vars[symbol]
+    console.log('running ' + symbol + '[' + subsymbol + '] = ', statement.value)
+    let done = 0
     return Promise.all(
       Promise.resolve(toAssign).map((a, i) => {
         const replacedStatement = Object.assign({}, statement)
         replacedStatement.value = statement.value.replace(/@/, symbol + '[' + i + ']')
-        return this.runStatement(replacedStatement)
+        return this.runStatement(replacedStatement).then(out => {
+          done++
+          process.stdout.write(' ' + lib.drawprogressBar(done, toAssign.length) +'        \r')
+          return out
+        })
       }, {concurrency:10})
     ).then(results => {
+      process.stdout.write(' '.repeat(process.stdout.columns-1)+'\r')
+      //console.log('')
       toAssign.forEach((a, i) => {
         toAssign[i][subsymbol] = results[i]
       })
@@ -106,7 +116,7 @@ module.exports = {
     const resourceParts = resource.split(' ')
     resource = resourceParts[0]
     const paginationMode = resourceParts[1]
-    console.log('-> ', resource)
+    //console.log('-> ', resource)
     const expanded = this.expandResources([resource])
     const resourceConfig = this.resourceToRequest(resource)
     if (resourceConfig.paginator && paginationMode!=='1') {
@@ -125,12 +135,12 @@ module.exports = {
           list = list.concat(data)
         }
         if (paginationMode && list.length >= paginationMode) {
-          console.log('LIMIT of '+paginationMode+' reached')
+          //console.log('LIMIT of '+paginationMode+' reached')
           return list.slice(0, paginationMode)
 
         }
         const nextResource = resourceConfig.paginator(dataOri)
-        console.log('next res', nextResource)
+        //console.log('next res', nextResource)
         if (nextResource) {
           return this.runResource(nextResource + ' ' + paginationMode, list)
         } else {

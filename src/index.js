@@ -16,7 +16,7 @@ module.exports = class FetchScript extends EventEmitter {
   executeCode(code) {
     const tokens = this.lex(code)
     const ast = this.parse(tokens)
-    this.interpret(ast).then((out) => {
+    return this.interpret(ast).then((out) => {
       console.log('done!')
       //console.dir(interpreter.vars, {colors: true, depth: 3})
       out.forEach(outLine => {
@@ -29,6 +29,7 @@ module.exports = class FetchScript extends EventEmitter {
         }
 
       })
+      return out
     }).catch(err => {
       console.log('error!', err.message)
     })
