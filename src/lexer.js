@@ -4,10 +4,27 @@ module.exports = {
   lex(code){
     const lexer = new Lexer()
     const tokens = []
+    let inBlock = false
     
     // comments
     lexer.addRule(/\#.*/, lexeme => {
       console.log('comment', lexeme)
+    })
+
+    // keywords
+    lexer.addRule(/(?:for|in)/, lexeme => {
+      tokens.push({
+        type: 'keyword',
+        value: lexeme
+      })
+    })
+
+    // block starts
+    lexer.addRule(/\:/, lexeme => {
+      tokens.push('EOL')
+      tokens.push('BLOCKSTART')
+      
+      inBlock = true
     })
 
     // symbols
@@ -26,8 +43,16 @@ module.exports = {
       })
     })
 
-    // allow whitespace
-    lexer.addRule(/\s/, lexeme => {})
+    // whitespace
+    lexer.addRule(/\n/, lexeme => {})
+    lexer.addRule(/[ ]+/, lexeme => {
+      if (inBlock) {
+        if (lexeme.length < 2) {
+          throw 'bad indentation'
+        }
+        tokens.push({ type: 'INDENT', value: 1 })
+      }
+    })
 
     // output
     lexer.addRule(/>.*/, lexeme => {
