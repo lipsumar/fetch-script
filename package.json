@@ -17,7 +17,9 @@
     "chalk": "^2.3.1",
     "deep-get-set": "^1.1.0",
     "jsonpath": "^1.0.0",
-    "lodash": "^4.17.5"
+    "lex": "^1.7.9",
+    "lodash": "^4.17.5",
+    "xml2js": "^0.4.19"
   },
   "devDependencies": {
     "chai": "^4.1.2",

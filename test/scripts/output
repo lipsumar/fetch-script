@@ -1,0 +1,24 @@
+$options.apis.sample.baseURL = "http://jsonplaceholder.typicode.com"
+
+# output a string
+> "hi there"
+
+# output a var
+a = "hello"
+> a
+
+# output js
+> a + " dude"
+
+# output a resource
+> /sample/users/1
+
+u = /sample/users
+
+# expanded output
+> {u[*].id},{u[*].name}
+> oho:{u[*].id},{u[*].name}
+
+# output an expanded resource
+> /sample/users/{u[*].id}
+
