@@ -10,22 +10,28 @@ module.exports = class FetchScript extends EventEmitter {
   constructor(opts) {
     super();
     this.opts = opts || {};
-    this.vars = {};
+    this.interpreter = new Interpreter();
+    this.interpreter.on("resource", res => {
+      this.emit("interpreter:resource", res);
+    });
+    this.interpreter.on("output", res => {
+      this.emit("out", res);
+    });
+    this.interpreter.on("set-option", res => {
+      this.emit("set-option", res);
+    });
   }
 
   executeCode(code) {
     const tokens = this.lex(code);
     const ast = this.parse(tokens);
-    const interpreter = new Interpreter();
-    interpreter.on('resource', res => {
-      this.emit('interpreter:resource', res)
-    })
-    return interpreter
+
+    return this.interpreter
       .interpret(ast)
       .then(out => {
         console.log("done!");
         //console.dir(interpreter.vars, {colors: true, depth: 3})
-        out.forEach(outLine => {
+        /*out.forEach(outLine => {
           if (outLine instanceof TypeList) {
             console.log(outLine);
           } else if (outLine instanceof Array) {
@@ -33,7 +39,7 @@ module.exports = class FetchScript extends EventEmitter {
           } else {
             console.log(outLine);
           }
-        });
+        });*/
         return out;
       })
       .catch(err => {
@@ -47,5 +53,9 @@ module.exports = class FetchScript extends EventEmitter {
 
   parse(tokens) {
     return parser.parse(tokens);
+  }
+
+  getVars() {
+    return this.interpreter.vars
   }
 };

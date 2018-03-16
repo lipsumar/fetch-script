@@ -16,13 +16,13 @@ const ProgressBar = require('progress');
 
 module.exports = class FetchScriptInterpreter extends EventEmitter {
   
-  constructor() {
+  constructor(opts) {
     super();
     this.vars = {}
+    this.opts = opts || {}
   }
 
   interpret(ast, opts) {
-    this.opts = opts || {}
     if (ast.type === "statements") {
       return this.runStatements(ast.statements).catch(err => console.log(err))
     }
@@ -52,6 +52,10 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
         return this.symbol(statement.value)  
       case 'output':
         return this.runStatement(statement.value)
+          .then(out => {
+            this.emit('output', out)
+            return out
+          })
       case 'resource':
         return this.runResource(statement.value)  
       case 'js':
@@ -76,7 +80,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
         return Promise.resolve(subStatements.map(t => t.value))
           .mapSeries(this.runString.bind(this))
           .then(out => {
-            return this.mergeOutputArrays(out).map(ar => ar.join(''))
+            return this.mergeOutputArrays(out).map(ar => ar.join('')).join('\n')
           })
         
       case 'die':
@@ -99,7 +103,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     return Promise.all(
       Promise.resolve(toAssign).map((a, i) => {
         const replacedStatement = Object.assign({}, statement)
-        replacedStatement.value = statement.value.replace(/@/, symbol + '[' + i + ']')
+        replacedStatement.value = statement.value.split('@').join(symbol + '[' + i + ']') //replace(/@/, symbol + '[' + i + ']')
         return this.runStatement(replacedStatement).then(out => {
           done++
           process.stdout.write(' ' + lib.drawprogressBar(done, toAssign.length) +'        \r')
@@ -157,7 +161,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
       
     } else {
       return Promise.all(
-        Promise.resolve(expanded).map(this.resource.bind(this), {concurrency: 10})
+        Promise.resolve(expanded).map(this.resource.bind(this), {concurrency: 20})
       ).then(res => {
         return expanded.length === 1 ? res[0] : new TypeList(res)
       }) 
@@ -222,6 +226,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
   }
 
   mergeOutputArrays(outs) {
+    //console.log('====>',outs)
     const arrayMaster = outs.find(o => o instanceof Array)
     return arrayMaster.map((master, i) => {
       return outs.map(o => {
@@ -243,8 +248,8 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     // expression is probably json path
     try {
       const values = jsonpath.query(this.vars, "$." + expression);
-      if (sync) return values.filter(lib.uniqueFilter)
-      return Promise.resolve(values.filter(lib.uniqueFilter));  
+      if (sync) return values
+      return Promise.resolve(values);  
     } catch (err) { }
   }
 
@@ -255,6 +260,10 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
         const parts = symbol.split('.')
         parts.shift()
         deepGetSet(this.opts, parts.join('.'), out)
+        this.emit('set-option', {
+          key: parts.join('.'),
+          data: out
+        })
       } else {
         this.vars[symbol] = out  
       }
@@ -293,7 +302,11 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
       }
 
       return data.data;
-    }).then(out => {
+    })
+      .catch((err, data) => {
+        return err.response.data
+    })  
+      .then(out => {
       this.emit('resource', {resource, out})
       return out
     })
