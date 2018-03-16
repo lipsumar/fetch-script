@@ -12,7 +12,7 @@ module.exports = {
     })
 
     // keywords
-    lexer.addRule(/(?:for|in)/, lexeme => {
+    lexer.addRule(/(?:for|in|def)/, lexeme => {
       tokens.push({
         type: 'keyword',
         value: lexeme
@@ -46,10 +46,7 @@ module.exports = {
     // whitespace
     lexer.addRule(/\n/, lexeme => {})
     lexer.addRule(/[ ]+/, lexeme => {
-      if (inBlock) {
-        if (lexeme.length < 2) {
-          throw 'bad indentation'
-        }
+      if (lexeme.length == 2) {
         tokens.push({ type: 'INDENT', value: 1 })
       }
     })

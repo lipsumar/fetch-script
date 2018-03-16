@@ -39,6 +39,14 @@ module.exports = {
         }
       }
 
+      if (!currentStatement && token.type === 'keyword' && token.value === 'def') {
+        currentStatement = {
+          type: 'function',
+          name: next.value,
+          statements: []
+        }
+      }
+
       if (!currentStatement && token.type === 'symbol' && next === '=') {
         currentStatement = {
           type: 'assignment',

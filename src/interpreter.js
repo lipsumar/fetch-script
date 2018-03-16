@@ -82,7 +82,8 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
           .then(out => {
             return this.mergeOutputArrays(out).map(ar => ar.join('')).join('\n')
           })
-        
+      case 'loop':
+        return this.runLoop(statement)
       case 'die':
         this.stop = true  
         return Promise.resolve()  
@@ -192,6 +193,14 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     
     if (sync) return out
     return Promise.resolve(out)
+  }
+
+  runLoop(statement) {
+    return Promise.resolve(this.vars[statement.loopOver])
+      .mapSeries(item => {
+        this.vars[statement.loopAs] = item
+        return this.runStatements(statement.statements)
+      })
   }
 
   expandResources(resources) {
