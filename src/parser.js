@@ -31,6 +31,22 @@ module.exports = {
         currentStatement.loopOver = next.value
       }
 
+      if (!currentStatement && token.type === 'keyword' && token.value === 'if') {
+        currentStatement = {
+          type: 'condition',
+          test: next.value,
+          statements: []
+        }
+      }
+
+      if (!currentStatement && token.type === 'keyword' && token.value === 'else') {
+        currentStatement = {
+          type: 'condition',
+          test:'!('+tree.statements[tree.statements.length-1].test+')',
+          statements: []
+        }
+      }
+
       if (!currentStatement && token.type === 'keyword' && token.value === 'for') {
         currentStatement = {
           type: 'loop',

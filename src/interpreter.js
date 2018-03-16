@@ -84,6 +84,8 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
           })
       case 'loop':
         return this.runLoop(statement)
+      case 'condition':
+        return this.runCondition(statement)
       case 'die':
         this.stop = true  
         return Promise.resolve()  
@@ -201,6 +203,14 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
         this.vars[statement.loopAs] = item
         return this.runStatements(statement.statements)
       })
+  }
+
+  runCondition(statement) {
+    const pass = this.runJavascript(statement.test, true)
+    if (pass) {
+      return this.runStatements(statement.statements)
+    }
+    return Promise.resolve()
   }
 
   expandResources(resources) {

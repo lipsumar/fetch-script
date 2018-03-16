@@ -12,11 +12,22 @@ module.exports = {
     })
 
     // keywords
-    lexer.addRule(/(?:for|in|def)/, lexeme => {
+    lexer.addRule(/(?:for|in|def|else)/, lexeme => {
       tokens.push({
         type: 'keyword',
         value: lexeme
       })
+    })
+    lexer.addRule(/if .*/, lexeme => {
+      tokens.push({
+        type: 'keyword',
+        value: 'if'
+      })
+      const codeString = lexeme.substr(3, lexeme.length-4).trim()
+      tokens.push(this.createCodeToken(codeString))
+      tokens.push('EOL')
+      tokens.push('BLOCKSTART')
+
     })
 
     // block starts
