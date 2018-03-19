@@ -10,7 +10,8 @@ const xmlParser = new xml2js.Parser()
 const parseXML = xmlParser.parseString
 const TypeList = require('./types/List')
 const stringLexer = require('./lexer.old')
-const ProgressBar = require('progress');
+const fs = require('fs')
+const moduleCsv = require('./modules/csv')
 
 
 
@@ -18,7 +19,9 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
   
   constructor(opts) {
     super();
-    this.vars = {}
+    this.vars = {
+      ...moduleCsv.vars 
+    }
     this.opts = opts || {}
   }
 
@@ -53,7 +56,26 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
       case 'output':
         return this.runStatement(statement.value)
           .then(out => {
-            this.emit('output', out)
+            if (statement.to === 'stdout') {
+              this.emit('output', out)  
+            } else {
+              return new Promise((resolve,reject) => {
+                fs.writeFile(
+                  this.runJavascript(statement.to, true),
+                  typeof out === 'string' ? out : JSON.stringify(out),
+                  'utf8',
+                  (err) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      this.emit('output-file', { out, to: statement.to })  
+                      resolve(out)
+                    }
+                  }
+                )
+              })
+            }
+            
             return out
           })
       case 'resource':

@@ -109,9 +109,10 @@ module.exports = {
         return;
       }
     
-      if (!currentStatement && prev === '>') {
+      if (!currentStatement && prev.type === 'output') {
         currentStatement = {
           type: 'output',
+          to: prev.to,
           value: token
         }
       }
