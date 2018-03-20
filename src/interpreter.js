@@ -10,7 +10,6 @@ const xmlParser = new xml2js.Parser()
 const parseXML = xmlParser.parseString
 const TypeList = require('./types/List')
 const stringLexer = require('./lexer.old')
-const ProgressBar = require('progress');
 
 
 
