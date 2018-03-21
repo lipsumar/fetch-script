@@ -22,6 +22,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     this.vars = {
       ...moduleCsv.vars 
     }
+    this.axios = axios.create()
     this.opts = opts || {}
   }
 
@@ -332,7 +333,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
       return req.module({params})
     }
     //console.log('request->', req)
-    return axios.request(req).then(data => {
+    return this.axios.request(req).then(data => {
       if (typeof data.data === 'string' && data.data[0] === '<') { // smells like xml
         return new Promise((resolve,reject) => {
           parseXML(data.data, (err, parsed) => {
