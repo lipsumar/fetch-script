@@ -10,7 +10,7 @@ module.exports = class FetchScript extends EventEmitter {
   constructor(opts) {
     super();
     this.opts = opts || {};
-    this.interpreter = new Interpreter();
+    this.interpreter = new Interpreter(this.opts);
     this.interpreter.on("resource", res => {
       this.emit("interpreter:resource", res);
     });
@@ -56,6 +56,6 @@ module.exports = class FetchScript extends EventEmitter {
   }
 
   getVars() {
-    return this.interpreter.vars
+    return this.interpreter.vars;
   }
 };
