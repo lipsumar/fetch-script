@@ -10,7 +10,7 @@ module.exports = class FetchScript extends EventEmitter {
   constructor(opts) {
     super();
     this.opts = opts || {};
-    this.interpreter = new Interpreter();
+    this.interpreter = new Interpreter(this.opts);
     this.axios = this.interpreter.axios
     this.interpreter.on("resource", res => {
       this.emit("interpreter:resource", res);
