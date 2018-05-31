@@ -2,7 +2,7 @@
 
 **DISCLAIMER: This is a work in progress**
 
-> fetch-script allows to fetch APIs and output in a very succinct manner
+> Powerful API fetching with a few keystrokes
 
 ## A weird flavor of javascript
 
