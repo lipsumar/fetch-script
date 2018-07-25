@@ -19,7 +19,7 @@ Fetch-script is made to create small programs to fetch data. The code above does
 
 1. GET request to an API defined as "sample" on path `/users`
 2. As many GET requests to path `/users/<id>`
-3. For each item in `all`, GET request to `/sample/posts/?userId=<id>`
+3. For each item in `all`, GET request to `/sample/posts/?userId=<id>` and assign result to each item's `.posts` property
 4.
 5. A loop
 6. Output a line
