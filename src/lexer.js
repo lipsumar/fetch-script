@@ -4,10 +4,49 @@ module.exports = {
   lex(code){
     const lexer = new Lexer()
     const tokens = []
-    
+
     // comments
     lexer.addRule(/\#.*/, lexeme => {
-      console.log('comment', lexeme)
+      //console.log('comment', lexeme)
+    })
+
+    // keywords
+    lexer.addRule(/(?:for|in|def|else)/, lexeme => {
+      tokens.push({
+        type: 'keyword',
+        value: lexeme
+      })
+    })
+    lexer.addRule(/if .*/, lexeme => {
+      tokens.push({
+        type: 'keyword',
+        value: 'if'
+      })
+      const codeString = lexeme.substr(3, lexeme.length-4).trim()
+      tokens.push(this.createCodeToken(codeString))
+      tokens.push('EOL')
+      tokens.push('BLOCKSTART')
+    })
+    lexer.addRule(/POST [^\{]+/, lexeme => {
+      tokens.push({
+        type: 'keyword',
+        value: 'post'
+      })
+      const codeString = lexeme.substr(5, lexeme.length - 6).trim()
+      tokens.push(this.createCodeToken(codeString))
+    })
+
+    // block starts
+    lexer.addRule(/\:/, lexeme => {
+      tokens.push('EOL')
+      tokens.push('BLOCKSTART')
+    })
+
+    lexer.addRule(/\{.*/, lexeme => {
+      tokens.push({
+        type: 'js',
+        value: lexeme
+      })
     })
 
     // symbols
@@ -26,13 +65,32 @@ module.exports = {
       })
     })
 
-    // allow whitespace
-    lexer.addRule(/\s/, lexeme => {})
+    // whitespace
+    lexer.addRule(/\n/, lexeme => {})
+    lexer.addRule(/[ ]+/, lexeme => {
+      if (lexeme.length == 2) {
+        tokens.push({ type: 'INDENT', value: 1 })
+      }
+    })
 
     // output
-    lexer.addRule(/>.*/, lexeme => {
-      tokens.push('>')
+    lexer.addRule(/> .*/, lexeme => {
+      tokens.push({
+        type: 'output',
+        to: 'stdout'
+      })
       const codeString = lexeme.substr(1).trim()
+      tokens.push(this.createCodeToken(codeString))
+      tokens.push('EOL')
+    })
+    // output to file
+    lexer.addRule(/>.*/, lexeme => {
+      const parts = lexeme.split(' ')
+      tokens.push({
+        type: 'output',
+        to: parts.shift().substr(1)
+      })
+      const codeString = parts.join(' ')
       tokens.push(this.createCodeToken(codeString))
       tokens.push('EOL')
     })
@@ -50,7 +108,8 @@ module.exports = {
     })
 
     try {
-      lexer.setInput(code).lex()
+      const pre = this.pre(code)
+      lexer.setInput(pre).lex()
     } catch (err) {
       console.error('Lex error: ' + err.message);
       console.log(err)
@@ -77,5 +136,38 @@ module.exports = {
       type: 'js',
       value: code
     }
+  },
+
+  pre(code) {
+    const lines = code.split('\n')
+    const newLines = []
+    let buffer = null
+    let endBoundary = null
+    lines.forEach(line => {
+      if (buffer) {
+        buffer.push(line)
+        if (line === endBoundary) {
+          endBoundary = null
+          newLines.push(buffer.join(''))
+          buffer = null
+        }
+        return
+      }
+
+      if (line[line.length - 1] === '{') {
+        buffer = [line]
+        endBoundary = '  '.repeat(this.indentSize(line)) + '}'
+        return
+      }
+
+      newLines.push(line)
+    })
+    return newLines.join('\n')
+  },
+
+  indentSize(line) {
+    const m = line.match(/^ +/g)
+    if(!m) return 0
+    return m[0].length / 2
   }
 }

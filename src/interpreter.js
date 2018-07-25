@@ -10,14 +10,19 @@ const xmlParser = new xml2js.Parser()
 const parseXML = xmlParser.parseString
 const TypeList = require('./types/List')
 const stringLexer = require('./lexer.old')
+const fs = require('fs')
+const moduleCsv = require('./modules/csv')
 
 
 
 module.exports = class FetchScriptInterpreter extends EventEmitter {
-  
+
   constructor(opts) {
     super();
-    this.vars = {}
+    this.vars = {
+      ...moduleCsv.vars
+    }
+    this.axios = axios.create()
     this.opts = opts || {}
   }
 
@@ -46,21 +51,40 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
   runStatement(statement) {
     switch (statement.type) {
       case 'assignment':
-        return this.runAssignment(statement)   
+        return this.runAssignment(statement)
       case 'symbol':
-        return this.symbol(statement.value)  
+        return this.symbol(statement.value)
       case 'output':
         return this.runStatement(statement.value)
           .then(out => {
-            this.emit('output', out)
+            if (statement.to === 'stdout') {
+              this.emit('output', out)
+            } else {
+              return new Promise((resolve,reject) => {
+                fs.writeFile(
+                  this.runJavascript(statement.to, true),
+                  typeof out === 'string' ? out : JSON.stringify(out),
+                  'utf8',
+                  (err) => {
+                    if (err) {
+                      reject(err)
+                    } else {
+                      this.emit('output-file', { out, to: statement.to })
+                      resolve(out)
+                    }
+                  }
+                )
+              })
+            }
+
             return out
           })
       case 'resource':
-        return this.runResource(statement.value)  
+        return this.runResource(statement.value)
       case 'js':
-        return this.runJavascript(statement.value)  
+        return this.runJavascript(statement.value)
       case 'expression':
-        // @TODO move parsing to parser  
+        // @TODO move parsing to parser
         const parts = statement.value.split('')
         parts.pop()
         parts.shift()
@@ -81,12 +105,15 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
           .then(out => {
             return this.mergeOutputArrays(out).map(ar => ar.join('')).join('\n')
           })
-        
+      case 'loop':
+        return this.runLoop(statement)
+      case 'condition':
+        return this.runCondition(statement)
       case 'die':
-        this.stop = true  
-        return Promise.resolve()  
+        this.stop = true
+        return Promise.resolve()
       default:
-        return Promise.resolve(statement.value)  
+        return Promise.resolve(statement.value)
     }
   }
 
@@ -139,7 +166,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
           data = resourceConfig.accessor ? resourceConfig.accessor(data) : data
         } catch (err) {
           return list
-        }  
+        }
         if (typeof data !== 'undefined') {
           list = list.concat(data)
         }
@@ -157,13 +184,13 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
           return list
         }
       })
-      
+
     } else {
       return Promise.all(
         Promise.resolve(expanded).map(this.resource.bind(this), {concurrency: 20})
       ).then(res => {
         return expanded.length === 1 ? res[0] : new TypeList(res)
-      }) 
+      })
     }
 
   }
@@ -188,9 +215,25 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
       console.log(err.message)
       console.log('Executing:', jsCode)
     }
-    
+
     if (sync) return out
     return Promise.resolve(out)
+  }
+
+  runLoop(statement) {
+    return Promise.resolve(this.vars[statement.loopOver])
+      .mapSeries(item => {
+        this.vars[statement.loopAs] = item
+        return this.runStatements(statement.statements)
+      })
+  }
+
+  runCondition(statement) {
+    const pass = this.runJavascript(statement.test, true)
+    if (pass) {
+      return this.runStatements(statement.statements)
+    }
+    return Promise.resolve()
   }
 
   expandResources(resources) {
@@ -209,7 +252,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
       if (m && m[1]) {
         const expr = m[1];
         const value = this.resolveExpression(expr, true);
-        
+
         if (value instanceof Array) {
           inserted = value.map(v => str.split(m[0]).join(v));
         } else {
@@ -248,7 +291,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     try {
       const values = jsonpath.query(this.vars, "$." + expression);
       if (sync) return values
-      return Promise.resolve(values);  
+      return Promise.resolve(values);
     } catch (err) { }
   }
 
@@ -264,9 +307,9 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
           data: out
         })
       } else {
-        this.vars[symbol] = out  
+        this.vars[symbol] = out
       }
-      
+
     })
   }
 
@@ -290,7 +333,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
       return req.module({params})
     }
     //console.log('request->', req)
-    return axios.request(req).then(data => {
+    return this.axios.request(req).then(data => {
       if (typeof data.data === 'string' && data.data[0] === '<') { // smells like xml
         return new Promise((resolve,reject) => {
           parseXML(data.data, (err, parsed) => {
@@ -304,7 +347,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     })
       .catch((err, data) => {
         return err.response.data
-    })  
+    })
       .then(out => {
       this.emit('resource', {resource, out})
       return out

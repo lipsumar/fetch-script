@@ -1,14 +1,67 @@
 module.exports = {
   parse(tokens) {
-    console.log(tokens)
-    const tree = {
+    //console.log(tokens)
+    let tree = {
       type: 'statements',
       statements: []
     }
+    const rootTree = tree
     let currentStatement = null
+    let currentIndent = 0
     tokens.forEach((token, i) => {
       const prev = i > 0 ? tokens[i - 1] : null
       const next = i < tokens.length - 1 ? tokens[i + 1] : null
+
+      if (token === 'BLOCKSTART') {
+        console.log('swap tree', tree.statements[tree.statements.length - 1])
+        tree = tree.statements[tree.statements.length-1]
+      }
+
+      if (token.type === 'INDENT') {
+        currentIndent = token.value
+        return
+      }
+
+      if (currentIndent > 0 && prev === 'EOL' && token.type !== 'INDENT') {
+        currentIndent = 0
+        tree = rootTree
+      }
+
+      if (currentStatement && currentStatement.type === 'loop' && token.type === 'keyword' && token.value === 'in') {
+        currentStatement.loopOver = next.value
+      }
+
+      if (!currentStatement && token.type === 'keyword' && token.value === 'if') {
+        currentStatement = {
+          type: 'condition',
+          test: next.value,
+          statements: []
+        }
+      }
+
+      if (!currentStatement && token.type === 'keyword' && token.value === 'else') {
+        currentStatement = {
+          type: 'condition',
+          test:'!('+tree.statements[tree.statements.length-1].test+')',
+          statements: []
+        }
+      }
+
+      if (!currentStatement && token.type === 'keyword' && token.value === 'for') {
+        currentStatement = {
+          type: 'loop',
+          loopAs: next.value,
+          statements: []
+        }
+      }
+
+      if (!currentStatement && token.type === 'keyword' && token.value === 'def') {
+        currentStatement = {
+          type: 'function',
+          name: next.value,
+          statements: []
+        }
+      }
 
       if (!currentStatement && token.type === 'symbol' && next === '=') {
         currentStatement = {
@@ -42,7 +95,7 @@ module.exports = {
           value: token.value
         }
       }
-      
+
       if (token.type === 'subsymbol' && next === '=') {
         currentStatement = {
           type: 'subassignment',
@@ -50,19 +103,20 @@ module.exports = {
         }
         return;
       }
-      
+
       if (currentStatement && currentStatement.type === 'output' && token!='EOL') {
         currentStatement.values.push(token)
         return;
       }
-    
-      if (!currentStatement && prev === '>') {
+
+      if (!currentStatement && prev.type === 'output') {
         currentStatement = {
           type: 'output',
+          to: prev.to,
           value: token
         }
       }
-      
+
 
 
       if (token === 'EOL' && currentStatement) {
@@ -71,8 +125,8 @@ module.exports = {
       }
     })
 
-    console.dir(tree, { depth: 10, colors: true })
-    return tree
+    console.dir(rootTree, { depth: 10, colors: true })
+    return rootTree
 
   }
 }
