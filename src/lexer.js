@@ -4,10 +4,10 @@ module.exports = {
   lex(code){
     const lexer = new Lexer()
     const tokens = []
-    
+
     // comments
     lexer.addRule(/\#.*/, lexeme => {
-      console.log('comment', lexeme)
+      //console.log('comment', lexeme)
     })
 
     // keywords
@@ -48,7 +48,7 @@ module.exports = {
         value: lexeme
       })
     })
-    
+
     // symbols
     lexer.addRule(/[a-z\.$_](?:[a-z\.$_0-9]+|)/i, lexeme => {
       tokens.push({
@@ -139,7 +139,7 @@ module.exports = {
   },
 
   pre(code) {
-    const lines = code.split('\n') 
+    const lines = code.split('\n')
     const newLines = []
     let buffer = null
     let endBoundary = null
@@ -153,7 +153,7 @@ module.exports = {
         }
         return
       }
-      
+
       if (line[line.length - 1] === '{') {
         buffer = [line]
         endBoundary = '  '.repeat(this.indentSize(line)) + '}'

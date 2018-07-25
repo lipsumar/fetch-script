@@ -1,6 +1,6 @@
 module.exports = {
   parse(tokens) {
-    console.log(tokens)
+    //console.log(tokens)
     let tree = {
       type: 'statements',
       statements: []
@@ -95,7 +95,7 @@ module.exports = {
           value: token.value
         }
       }
-      
+
       if (token.type === 'subsymbol' && next === '=') {
         currentStatement = {
           type: 'subassignment',
@@ -103,12 +103,12 @@ module.exports = {
         }
         return;
       }
-      
+
       if (currentStatement && currentStatement.type === 'output' && token!='EOL') {
         currentStatement.values.push(token)
         return;
       }
-    
+
       if (!currentStatement && prev.type === 'output') {
         currentStatement = {
           type: 'output',
@@ -116,7 +116,7 @@ module.exports = {
           value: token
         }
       }
-      
+
 
 
       if (token === 'EOL' && currentStatement) {

@@ -13,7 +13,6 @@ describe("Assignment", () => {
 
   describe("Running scripts/assignments", () => {
     const code = fs.readFileSync(path.join(__dirname, "scripts/assignments"), { encoding: "utf8" });
-    console.log("code", code);
     const fetchScript = new FetchScript();
 
     let vars = null;
@@ -47,13 +46,13 @@ describe("Assignment", () => {
     it("should assign resources", () => {
       expect(vars.u.id).to.equal(1);
       expect(vars.u.name).to.equal("norbert");
-      
+
       expect(vars.us.length).to.equal(2);
       expect(vars.us[0].id).to.equal(1);
       expect(vars.us[1].name).to.equal('dave');
       expect(vars.all.length).to.equal(2);
       expect(vars.all[1].name).to.equal('dave');
-      
+
     });
   });
 });
