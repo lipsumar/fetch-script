@@ -109,7 +109,7 @@ module.exports = {
         return;
       }
 
-      if (!currentStatement && prev.type === 'output') {
+      if (!currentStatement && prev && prev.type === 'output') {
         currentStatement = {
           type: 'output',
           to: prev.to,

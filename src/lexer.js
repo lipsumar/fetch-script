@@ -107,13 +107,10 @@ module.exports = {
       tokens.push({type:'die'})
     })
 
-    try {
-      const pre = this.pre(code)
-      lexer.setInput(pre).lex()
-    } catch (err) {
-      console.error('Lex error: ' + err.message);
-      console.log(err)
-    }
+
+    const pre = this.pre(code)
+    lexer.setInput(pre).lex()
+
 
     return tokens
   },

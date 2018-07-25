@@ -23,12 +23,12 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
       ...moduleCsv.vars
     }
     this.axios = axios.create()
-    this.opts = opts || {}
+    this.opts = Object.assign({apis:{}}, opts || {})
   }
 
   interpret(ast, opts) {
     if (ast.type === "statements") {
-      return this.runStatements(ast.statements).catch(err => console.log(err))
+      return this.runStatements(ast.statements)
     }
   }
 
@@ -212,12 +212,11 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     try {
       out = f(...argv)
     } catch (err) {
-      console.log(err.message)
-      console.log('Executing:', jsCode)
+      throw new Error(`Javascript error: "${err.message}" while interpreting:\n  ${jsCode.split('\n').join('\n  ')}`)
+      out = err
     }
 
-    if (sync) return out
-    return Promise.resolve(out)
+    return sync ? out : Promise.resolve(out)
   }
 
   runLoop(statement) {
@@ -299,6 +298,9 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
   assign(symbol, statement) {
     return this.runStatement(statement).then(out => {
       if (symbol[0] === '$') {
+        if (symbol === '$') {
+          throw new Error('Forbidden to assign to $')
+        }
         const parts = symbol.split('.')
         parts.shift()
         deepGetSet(this.opts, parts.join('.'), out)
@@ -360,6 +362,11 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     const routeIdentifier = parts[2];
     const apiConfig = this.opts.apis[apiIdentifier]
     let routeConfig = {}
+
+    if (!this.opts.apis[apiIdentifier]) {
+      throw new Error(`API "${apiIdentifier}" is not defined`)
+    }
+
     if (this.opts.apis[apiIdentifier].route && this.opts.apis[apiIdentifier].route[routeIdentifier]) {
       routeConfig = this.opts.apis[apiIdentifier].route[routeIdentifier]
     }
