@@ -1,0 +1,21 @@
+foo = true
+
+if foo:
+  > foo + ' is true'
+  fooIsTrue = true
+else:
+  > foo + ' is not true'
+  fooIsTrue = false
+
+bangFoo = false
+if !foo:
+  > foo + ' is not true'
+else:
+  bangFoo = true
+  > foo + ' is not false'
+
+count = 0
+ar = [1,2,4]
+for i in ar:
+  count = count + i
+  > 'item ' + i
