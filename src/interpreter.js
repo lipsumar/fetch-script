@@ -23,7 +23,8 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
       ...moduleCsv.vars
     }
     this.axios = axios.create()
-    this.opts = Object.assign({apis:{}}, opts || {})
+    this.opts = Object.assign({ apis: {} }, opts || {})
+    this.outs = []
   }
 
   interpret(ast, opts) {
@@ -34,13 +35,12 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
 
   runStatements(statements) {
     let i = 0
-    const outs = []
     const next = () => {
       if (i === statements.length || this.stop) {
-        return Promise.resolve(outs.filter(o => typeof o !== 'undefined'))
+        return Promise.resolve(this.outs)//.filter(o => typeof o !== 'undefined'))
       }
       return this.runStatement(statements[i]).then((out) => {
-        outs.push(out)
+        //this.outs.push(out)
         i++
         return next()
       })
@@ -58,6 +58,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
         return this.runStatement(statement.value)
           .then(out => {
             if (statement.to === 'stdout') {
+              this.outs.push(out)
               this.emit('output', out)
             } else {
               return new Promise((resolve,reject) => {
