@@ -3,10 +3,11 @@ module.exports = class TypeList extends Array {
 
   constructor(resources) {
     if (resources instanceof Array) {
-      super(...resources)  
+      super(...resources)
     } else {
       super()
-    }    
+    }
+    this.page = 0
   }
 
   get(index) {
@@ -15,6 +16,14 @@ module.exports = class TypeList extends Array {
 
   first() {
     return this.get(0)
+  }
+
+  addPage(items) {
+    for (let item of items) {
+      this.push(item)
+    }
+    this.page += 1
+    return this
   }
 
   toString() {

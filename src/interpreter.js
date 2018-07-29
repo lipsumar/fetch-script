@@ -170,14 +170,14 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
           return list
         }
         if (typeof data !== 'undefined') {
-          list = list.concat(data)
+          list.addPage(data)
         }
         if (paginationMode && list.length >= paginationMode) {
           //console.log('LIMIT of '+paginationMode+' reached')
           return list.slice(0, paginationMode)
 
         }
-        const nextResource = resourceConfig.paginator(dataOri)
+        const nextResource = resourceConfig.paginator(dataOri, list.page)
         //console.log('next res', nextResource)
         if (nextResource) {
           return this.runResource(nextResource + ' ' + paginationMode, list)
