@@ -104,7 +104,7 @@ The example above is the same as:
 users = /sample/users
 for user in users:
   user.posts = /sample/posts?user={user.id}
-``
+```
 
 ### Output
 
