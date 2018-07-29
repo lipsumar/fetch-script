@@ -2,31 +2,52 @@
 
 **DISCLAIMER: This is a work in progress**
 
-> Powerful API fetching with a few keystrokes
+> A language to talk to HTTP APIs
+
 
 ## A weird flavor of javascript
 
 ```
-1.  users = /sample/users
-2.  all = /sample/users/{users[*].id}
-3.    [posts] = /sample/posts/?userId={@.id}
-4.
-5.  for user in all:
-6.    > user.name + ': ' + user.posts.length + ' posts'
+1.  $options.apis.sample.baseURL = "http://jsonplaceholder.typicode.com"
+2.  users = /sample/users
+3.  all = /sample/users/{users[*].id}
+4.    [posts] = /sample/posts/?userId={@.id}
+5.
+6.  for user in all:
+7.    > user.name + ': ' + user.posts.length + ' posts'
 ```
 
 Fetch-script is made to create small programs to fetch data. The code above does the following:
 
-1. GET request to an API defined as "sample" on path `/users`
-2. As many GET requests to path `/users/<id>`
-3. For each item in `all`, GET request to `/sample/posts/?userId=<id>` and assign result to each item's `.posts` property
-4.
-5. A loop
-6. Output a line
+1. Register an API called "sample"
+2. GET request API "sample" on path `/users`, assigned *synchronously* to `users`
+3. For each item in `users`, GET requests to path `/users/<id>`
+4. For each item in `all`, GET request to `/sample/posts/?userId=<id>` and assign result to each item's `.posts` property
+5.
+6. A loop
+7. Output a line
 
-It can be used as a [CLI tool](https://github.com/lipsumar/fetch-script-cli), including an interactive mode.
+It can be used as a [CLI tool](https://github.com/lipsumar/fetch-script-cli) or as a [web-app](https://github.com/lipsumar/fetch-script-app)
 
-There is also a [web-app](https://github.com/lipsumar/fetch-script-app)
+
+* [Language reference](#language-reference)
+  * [Fetch-script resource](#fetch-script-resource)
+    * [Expanded resources](#expanded-resources)
+  * [Assignment](#assignment)
+    * [Sub-assignment](#sub-assignment)
+  * [Output](#output)
+  * [Control structures](#control-structures)
+    * [Conditions](#conditions)
+    * [Loops](#loops)
+  * [$options](#options)
+    * [Registering APIs](#registering-apis)
+    * [Configuring API routes](#configuring-api-routes)
+* [Usage](#usage)
+* [API](#api)
+
+
+
+
 
 ## Language reference
 
@@ -39,7 +60,18 @@ The core of fetch-script are resources. A resource looks like this:
 /api/path
 ```
 
-It starts with a `/`, directly followed by the name of the API (see how to define APIs), then the path.
+It starts with a `/`, directly followed by the name of the API, then the path. (see [Registering APIs](#registering-apis)).
+
+A resource can be assigned to a variable:
+
+```
+users = /api/users
+> users[1].name
+```
+
+The response (JSON or XML) will be assigned *synchronously* to the variable. It can be immediatly used.
+
+#### Expanded resources
 
 Resources can be "expanded". For instance, consider you want to fetch the profile of many users, you would need to do:
 
@@ -81,9 +113,13 @@ foo = "bar"
 baz = [1, 2, 3].map(n => n*2)
 users = /my-api/users
 
-# only objects can be on multiple lines
+# only code between `{}` can be on multiple lines, such as objects or functions:
 obj = {
   foo: "bar"
+}
+
+foo = () => {
+  return 'hello'
 }
 ```
 
@@ -96,7 +132,7 @@ users = /sample/users
   [posts] = /sample/posts?user={@.id}
 ```
 
-Right after assigning a resource, a sub-assignment can be made. The previously assigned var will be used as a loop (in this case `users`) and will execute the sub-assignment for each item. The expression in `{}` is javascript where `@` represents the current item in the loop.
+Right after assigning a resource, a sub-assignment can be made. The previously assigned variable will be used as a loop (in this case `users`) and will execute the sub-assignment for each item. The expression in `{}` is javascript where `@` represents the current item in the loop.
 
 The example above is the same as:
 
@@ -172,6 +208,40 @@ $options.apis.gitlab.baseURL = "https://git.my-company.com/api/v4"
 $options.apis.gitlab.headers = {'Private-token': 'xxxxxxxxxx'}
 ```
 
+#### Configuring API routes
+
+Some routes might return responses like:
+
+`/sample/users`
+
+```json
+{
+  "info": {
+    "responseTime": 210,
+    "totalResults": 920
+  },
+  "users": [
+    {"id": 1, "name": "Helen"},
+    {"id": 2, "name": "John"},
+    // ...
+  ]
+}
+```
+
+To make working with this route easier, you can specify pagination and accessor:
+
+```
+// register an accessor so Fetch-script knows how to find the actual items
+$options.apis.sample.route.users.accessor = resp => resp.data.users
+
+// register a paginator so Fetch-script knows how to get the next page
+// it should return the next resource to fetch
+$options.apis.sample.route.users.paginator = (resp, page) => {
+  return resp.data.users.length > 0 ? '/sample/users?page=' + (page+1) : null
+}
+```
+
+
 
 ## Usage
 
@@ -192,7 +262,7 @@ fetch-script path/to/script.fetch-script
 fetch-script
 ```
 
-## As a node module
+### As a node module
 
 First install the module
 
@@ -215,8 +285,9 @@ fetchScript.on("out", out => {
 fetchScript.executeCode(`
   foos = /jph/users
   > /jph/users/{foos[*].id}
-`).then(res => {
-  console.log(res)
+`).then(outputs => {
+  console.log(outputs) // all outputs as an array
+  console.log(fetchScript.getVars()) // an object holding all variables
 })
 ```
 
@@ -225,7 +296,8 @@ fetchScript.executeCode(`
 ### Constructor options
 
 #### `apis`
-This is where you define APIs. For instance, to define an API named "jph":
+
+This is where you can also register APIs. For instance, to register an API named "jph":
 
 ```js
 new FetchScript({
@@ -238,7 +310,7 @@ new FetchScript({
 **`baseUrl`**: String. Mandatory. A base url to prepend to API paths
 
 ### `executeCode(String)`
-Execute fetch-script code, returns a promise.
+Execute fetch-script code, returns a Promise.
 
 
 ### Events
@@ -246,23 +318,6 @@ Execute fetch-script code, returns a promise.
 #### `out`
 Equivalent of stdout.
 
-Example:
-```js
-{
-  resource: "/api/user/1",
-  data: {id: 1, name: "Michael"}
-}
-```
-
 
 #### `error`
 Equivalent of stderr.
-
-Example:
-```js
-{
-  resource: "/api/user/1",
-  error: <Error object>
-}
-```
-
