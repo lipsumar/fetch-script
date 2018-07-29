@@ -35,5 +35,27 @@ describe("Assignment", () => {
       expect(vars.us).to.deep.equal(users);
       expect(vars.all).to.deep.equal(users);
     });
+    it('should assign multiline objects', () => {
+      expect(vars.obj).to.deep.equal({foo: 'bar', bar: 'baz'})
+    })
+
+    it('should assign in objects', () => {
+      expect(vars.obj2).to.deep.equal({hello: 'there'})
+    })
+    it('should sub-assign', () => {
+      users.forEach((user,i) => {
+        expect(vars.users[i].foo).to.deep.equal(user)
+      })
+    })
+    it('should assign in loops', () => {
+      users.forEach((user,i) => {
+        expect(vars.usersLoop[i].again).to.deep.equal(user)
+      })
+    })
+    it('should assign in arrays', () => {
+      expect(vars.stuff).to.deep.equal([1, 'foo', 3])
+
+    })
+
   });
 });

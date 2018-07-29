@@ -51,5 +51,14 @@ describe("Output", () => {
       expect(output[6]).to.deep.equal(users)
     })
 
+    it('should output multiline objects', () => {
+      expect(output[7]).to.deep.equal({foo: 'bar', baz: 'Leanne Graham'})
+    })
+
+    it('should output in loops', () => {
+      users.forEach((u,i) => {
+        expect(output[8+i]).to.equal(u.name)
+      })
+    })
   });
 });

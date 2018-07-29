@@ -57,7 +57,7 @@ users = [{id: 1}, {id: 2}, {id: 3}]
 profiles = /api/profile?user={users[*].id}
 ```
 
-Between curly braces is a jsonpath expression. `profiles` will contain an array with the 3 profiles.
+Between curly braces is a [jsonpath](http://jsonpath.com/) expression. `profiles` will contain an array with the 3 profiles.
 
 Simple variables can also be used in curly braces and will also be expanded if arrays:
 
@@ -70,15 +70,41 @@ one_profile = /api/profile?user={mike}
 ```
 
 
-### Assignation
+### Assignment
 
 Any javascript expression can be assigned, as well as fetch-script resources.
+
+Unlike javascript, no `var`, `const` or `let` is needed: all variables are global.
 
 ```
 foo = "bar"
 baz = [1, 2, 3].map(n => n*2)
 users = /my-api/users
+
+# only objects can be on multiple lines
+obj = {
+  foo: "bar"
+}
 ```
+
+#### Sub-assignment
+
+Resources support "sub-assignment".
+
+```
+users = /sample/users
+  [posts] = /sample/posts?user={@.id}
+```
+
+Right after assigning a resource, a sub-assignment can be made. The previously assigned var will be used as a loop (in this case `users`) and will execute the sub-assignment for each item. The expression in `{}` is javascript where `@` represents the current item in the loop.
+
+The example above is the same as:
+
+```
+users = /sample/users
+for user in users:
+  user.posts = /sample/posts?user={user.id}
+``
 
 ### Output
 
@@ -91,16 +117,54 @@ foo = "world"
 > /sample/users
 ```
 
-### Define APIs
+### Control structures
 
-Use the special variable `$options.apis`
+Control structures in Fetch-script use the python flavor:
+
+#### Conditions
+```
+if foo:
+  > foo + "is true"
+else:
+  > foo + "is not true"
+```
+
+#### Loops
+```
+stuff = [1, 2, 3]
+for i in stuff:
+  > 'stuff ' + i
+```
+
+Fetch-script currently only supports 1 level of nesting.
+
+### $options
+
+`$options` is a special variable used to configure fetch-script at runtime.
+
+#### Registering APIs
+
+In order to perform requests, APIs must be registered. Each API is associated to a name. The only required option is `baseURL`.
+
+Here we register an API under the name "sample":
 
 ```
 // Register an api called "sample"
 $options.apis.sample.baseURL = "http://jsonplaceholder.typicode.com"
 ```
 
-All options from axios are supported:
+From now on this API can be called by its name followed by a route:
+
+```
+> /sample/users
+```
+
+This will translate into `GET http://jsonplaceholder.typicode.com/users`.
+
+
+
+
+All options from [axios](https://github.com/axios/axios#request-config) are supported:
 
 ```
 // Register an api called "gitlab" with specific headers

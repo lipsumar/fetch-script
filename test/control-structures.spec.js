@@ -26,6 +26,8 @@ describe("Control structures", () => {
 
       expect(output[1]).to.equal('true is not false')
       expect(vars.bangFoo).to.equal(true)
+
+      expect(vars.obj).to.deep.equal({foo:'bar'})
     });
 
     it('should run loops correctly', () => {

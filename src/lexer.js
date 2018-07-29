@@ -50,7 +50,7 @@ module.exports = {
     })
 
     // symbols
-    lexer.addRule(/[a-z\.$_](?:[a-z\.$_0-9]+|)/i, lexeme => {
+    lexer.addRule(/[a-z\.$_](?:[a-z\.$_0-9\[\]]+|)/i, lexeme => {
       tokens.push({
         type: 'symbol',
         value: lexeme

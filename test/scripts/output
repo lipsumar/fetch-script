@@ -22,3 +22,12 @@ u = /sample/users
 # output an expanded resource
 > /sample/users/{u[*].id}
 
+# output a multiline object
+> {
+  foo: 'bar',
+  baz: u[0].name
+}
+
+# output in loop
+for user in u:
+  > user.name

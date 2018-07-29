@@ -16,5 +16,25 @@ us = /sample/users
 # assign an expanded resource
 all = /sample/users/{us[*].id}
 
+# multiline assignment
+obj = {
+  foo: 'bar',
+  bar: 'baz'
+}
 
+# object assignment
+obj2 = {}
+obj2.hello = 'there'
 
+# sub-assignment
+users = /sample/users
+  [foo] = /sample/users/{@.id}
+
+# array assignment
+stuff = [1, 2, 3]
+stuff[1] = 'foo'
+
+# assign in loop
+usersLoop = /sample/users
+for user in usersLoop:
+  user.again = /sample/users/{user.id}

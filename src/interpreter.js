@@ -2,6 +2,7 @@ const Promise = require("bluebird");
 const EventEmitter = require("events");
 const lib = require("./lib");
 const deepGetSet = require("deep-get-set");
+const dotty = require("dotty");
 const jsonpath = require("jsonpath");
 deepGetSet.p = true
 const axios = require("axios"); //@TODO move to module
@@ -125,7 +126,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
 
   runSubAssignment(symbol, subsymbol, statement) {
     const toAssign = this.vars[symbol]
-    console.log('running ' + symbol + '[' + subsymbol + '] = ', statement.value)
+    //console.log('running ' + symbol + '[' + subsymbol + '] = ', statement.value)
     let done = 0
     return Promise.all(
       Promise.resolve(toAssign).map((a, i) => {
@@ -310,7 +311,10 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
           data: out
         })
       } else {
-        this.vars[symbol] = out
+        //deepGetSet(this.vars, symbol, out)
+        //traverse(this.vars).set(symbol, out)
+        symbol = symbol.replace(/\[([0-9]+)\]/, '.$1')
+        dotty.put(this.vars, symbol, out)
       }
 
     })

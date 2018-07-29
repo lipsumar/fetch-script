@@ -12,6 +12,9 @@ if !foo:
   > foo + ' is not true'
 else:
   bangFoo = true
+  obj = {
+    foo: 'bar'
+  }
   > foo + ' is not false'
 
 count = 0
