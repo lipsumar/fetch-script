@@ -31,7 +31,7 @@ It can be used as a [CLI tool](https://github.com/lipsumar/fetch-script-cli) or 
 
 -----
 
-* [*Language reference*](#language-reference)
+* [**Language reference**](#language-reference)
   * [Fetch-script resource](#fetch-script-resource)
     * [Expanded resources](#expanded-resources)
   * [Assignment](#assignment)
@@ -43,8 +43,8 @@ It can be used as a [CLI tool](https://github.com/lipsumar/fetch-script-cli) or 
   * [$options](#options)
     * [Registering APIs](#registering-apis)
     * [Configuring API routes](#configuring-api-routes)
-* [*Usage*](#usage)
-* [*API*](#api)
+* [**Usage**](#usage)
+* [**API**](#api)
 
 
 
