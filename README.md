@@ -29,8 +29,9 @@ Fetch-script is made to create small programs to fetch data. The code above does
 
 It can be used as a [CLI tool](https://github.com/lipsumar/fetch-script-cli) or as a [web-app](https://github.com/lipsumar/fetch-script-app)
 
+-----
 
-* [Language reference](#language-reference)
+* [*Language reference*](#language-reference)
   * [Fetch-script resource](#fetch-script-resource)
     * [Expanded resources](#expanded-resources)
   * [Assignment](#assignment)
@@ -42,8 +43,8 @@ It can be used as a [CLI tool](https://github.com/lipsumar/fetch-script-cli) or 
   * [$options](#options)
     * [Registering APIs](#registering-apis)
     * [Configuring API routes](#configuring-api-routes)
-* [Usage](#usage)
-* [API](#api)
+* [*Usage*](#usage)
+* [*API*](#api)
 
 
 
