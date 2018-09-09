@@ -33,6 +33,7 @@ It can be used as a [CLI tool](https://github.com/lipsumar/fetch-script-cli) or 
 
 * [**Language reference**](#language-reference)
   * [Fetch-script resource](#fetch-script-resource)
+    * [Paginating resources](#paginating-resources)
     * [Expanded resources](#expanded-resources)
   * [Assignment](#assignment)
     * [Sub-assignment](#sub-assignment)
@@ -55,7 +56,7 @@ It can be used as a [CLI tool](https://github.com/lipsumar/fetch-script-cli) or 
 The language is mostly javascript, with a heavy amount of sugar on top.
 
 ### Fetch-script resource
-The core of fetch-script are resources. A resource looks like this:
+The core of fetch-script are resources. A resource represents a request to an API. It looks like this:
 
 ```
 /api/path
@@ -71,6 +72,10 @@ users = /api/users
 ```
 
 The response (JSON or XML) will be assigned *synchronously* to the variable. It can be immediatly used.
+
+#### Paginating resources
+
+Pagination is configured for each route, see [Configuring API routes](#configuring-api-routes).
 
 #### Expanded resources
 
