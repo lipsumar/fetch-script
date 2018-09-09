@@ -29,6 +29,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
   }
 
   interpret(ast, opts) {
+    this.outs = []
     if (ast.type === "statements") {
       return this.runStatements(ast.statements)
     }
