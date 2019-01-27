@@ -10,7 +10,7 @@ const xml2js = require('xml2js')//@TODO move to module
 const xmlParser = new xml2js.Parser()
 const parseXML = xmlParser.parseString
 const TypeList = require('./types/List')
-const stringLexer = require('./lexer.old')
+const stringLexer = require('./stringLexer')
 const fs = require('fs')
 const moduleCsv = require('./modules/csv')
 
