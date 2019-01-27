@@ -105,6 +105,7 @@ module.exports = {
 
     lexer.addRule(/die\(\)/, () => {
       tokens.push({type:'die'})
+      tokens.push('EOL')
     })
 
 

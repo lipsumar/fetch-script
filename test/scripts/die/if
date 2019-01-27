@@ -1,0 +1,11 @@
+> 'should be said'
+isTrue = true
+if isTrue === false:
+  die()
+
+> 'should also be said'
+
+if isTrue === true:
+  die()
+
+> 'should not be said'
