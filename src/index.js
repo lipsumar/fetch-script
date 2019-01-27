@@ -25,6 +25,10 @@ module.exports = class FetchScript extends EventEmitter {
     });
   }
 
+  setVariables(vars){
+    this.interpreter.setVariables(vars)
+  }
+
   executeCode(code) {
     let ast
     try {
