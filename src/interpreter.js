@@ -32,6 +32,8 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     this.outs = []
     if (ast.type === "statements") {
       return this.runStatements(ast.statements)
+    } else {
+      throw new Error('Expected an AST starting with a node of type "statements", got "' + ast.type + '"')
     }
   }
 
@@ -39,10 +41,9 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     let i = 0
     const next = () => {
       if (i === statements.length || this.stop) {
-        return Promise.resolve(this.outs)//.filter(o => typeof o !== 'undefined'))
+        return Promise.resolve(this.outs)
       }
       return this.runStatement(statements[i]).then((out) => {
-        //this.outs.push(out)
         i++
         return next()
       })
@@ -128,7 +129,6 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
 
   runSubAssignment(symbol, subsymbol, statement) {
     const toAssign = this.vars[symbol]
-    //console.log('running ' + symbol + '[' + subsymbol + '] = ', statement.value)
     let done = 0
     return Promise.all(
       Promise.resolve(toAssign).map((a, i) => {
@@ -142,13 +142,9 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
       }, {concurrency:10})
     ).then(results => {
       process.stdout.write(' '.repeat(process.stdout.columns-1)+'\r')
-      //console.log('')
       toAssign.forEach((a, i) => {
         toAssign[i][subsymbol] = results[i]
       })
-    })
-    return this.runStatement(statement).then(out => {
-      this.vars[symbol][subsymbol] = out
     })
   }
 
@@ -163,14 +159,12 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     args.push('return ' + jsCode)
     const argv = Object.keys(this.vars).map(n => this.vars[n])
     argv.push(require)
-    //console.log(jsCode)
     let out = null
     const f = new Function(...args)
     try {
       out = f(...argv)
     } catch (err) {
       throw new Error(`Javascript error: "${err.message}" while interpreting:\n  ${jsCode.split('\n').join('\n  ')}`)
-      out = err
     }
 
     return sync ? out : Promise.resolve(out)
@@ -224,7 +218,6 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
   }
 
   mergeOutputArrays(outs) {
-    //console.log('====>',outs)
     const arrayMaster = outs.find(o => o instanceof Array)
     return arrayMaster.map((master, i) => {
       return outs.map(o => {
@@ -266,8 +259,6 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
           data: out
         })
       } else {
-        //deepGetSet(this.vars, symbol, out)
-        //traverse(this.vars).set(symbol, out)
         symbol = symbol.replace(/\[([0-9]+)\]/, '.$1')
         dotty.put(this.vars, symbol, out)
       }
