@@ -35,6 +35,10 @@ module.exports = class FetchScript extends EventEmitter {
       throw new Error('Syntax Error: '+err.message)
     }
 
+    if(this.opts.debug){
+      console.dir(ast, { depth: 10, colors: true })
+    }
+
     let prom
     try {
       prom = this.interpreter

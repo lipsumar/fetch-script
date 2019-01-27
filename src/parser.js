@@ -13,7 +13,7 @@ module.exports = {
       const next = i < tokens.length - 1 ? tokens[i + 1] : null
 
       if (token === 'BLOCKSTART') {
-        console.log('swap tree', tree.statements[tree.statements.length - 1])
+        //console.log('swap tree', tree.statements[tree.statements.length - 1])
         tree = tree.statements[tree.statements.length-1]
       }
 
@@ -125,7 +125,6 @@ module.exports = {
       }
     })
 
-    console.dir(rootTree, { depth: 10, colors: true })
     return rootTree
 
   }
