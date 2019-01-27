@@ -5,14 +5,10 @@ const deepGetSet = require("deep-get-set");
 const dotty = require("dotty");
 const jsonpath = require("jsonpath");
 deepGetSet.p = true
-const axios = require("axios"); //@TODO move to module
-const xml2js = require('xml2js')//@TODO move to module
-const xmlParser = new xml2js.Parser()
-const parseXML = xmlParser.parseString
-const TypeList = require('./types/List')
 const stringLexer = require('./stringLexer')
 const fs = require('fs')
 const moduleCsv = require('./modules/csv')
+const ModuleResource = require('./modules/resource')
 
 
 
@@ -23,8 +19,8 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     this.vars = {
       ...moduleCsv.vars
     }
-    this.axios = axios.create()
     this.opts = Object.assign({ apis: {} }, opts || {})
+    this.moduleResource = new ModuleResource(this.opts.apis)
     this.outs = []
   }
 
@@ -87,7 +83,8 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
             return out
           })
       case 'resource':
-        return this.runResource(statement.value)
+        const expanded = this.expandResources([statement.value])
+        return this.moduleResource.run(expanded)
       case 'js':
         return this.runJavascript(statement.value)
       case 'expression':
@@ -153,53 +150,6 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     return this.runStatement(statement).then(out => {
       this.vars[symbol][subsymbol] = out
     })
-  }
-
-  runResource(resource, list = new TypeList()) {
-    const resourceParts = resource.split(' ')
-    resource = resourceParts[0]
-    const paginationMode = resourceParts[1]
-    //console.log('-> ', resource)
-    const expanded = this.expandResources([resource])
-    const resourceConfig = this.resourceToRequest(resource)
-    if (resourceConfig.paginator && paginationMode!=='1') {
-      if (expanded.length > 1) {
-        throw new Error('can not paginate an expanded resource')
-      }
-      return this.resource(expanded[0]).then(data => {
-        const dataOri = data
-        //console.log('pushing to list', list.length)
-        try {
-          data = resourceConfig.accessor ? resourceConfig.accessor(data) : data
-        } catch (err) {
-          return list
-        }
-        if (typeof data !== 'undefined') {
-          list.addPage(data)
-        }
-        if (paginationMode && list.length >= paginationMode) {
-          //console.log('LIMIT of '+paginationMode+' reached')
-          return list.slice(0, paginationMode)
-
-        }
-        const nextResource = resourceConfig.paginator(dataOri, list.page)
-        //console.log('next res', nextResource)
-        if (nextResource) {
-          return this.runResource(nextResource + ' ' + paginationMode, list)
-        } else {
-          //console.log('returning list', list.length)
-          return list
-        }
-      })
-
-    } else {
-      return Promise.all(
-        Promise.resolve(expanded).map(this.resource.bind(this), {concurrency: 20})
-      ).then(res => {
-        return expanded.length === 1 ? res[0] : new TypeList(res)
-      })
-    }
-
   }
 
   runString(string) {
@@ -331,62 +281,4 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     )
   }
 
-  resource(resource) {
-    const req = this.resourceToRequest(resource)
-    if (req.module) {
-      const resParts = resource.split('?')
-      let params = {}
-      if (resParts[1]) {
-        params = resParts[1].split('&').map(kv => kv.split('=')).reduce((m, kv) => {
-          m[kv[0]] = kv[1]
-          return m
-        },{})
-      }
-      return req.module({params})
-    }
-    //console.log('request->', req)
-    return this.axios.request(req).then(data => {
-      if (typeof data.data === 'string' && data.data[0] === '<') { // smells like xml
-        return new Promise((resolve,reject) => {
-          parseXML(data.data, (err, parsed) => {
-            if (err) return reject(err)
-            return resolve(parsed)
-          })
-        })
-      }
-
-      return data.data;
-    })
-      .catch((err, data) => {
-        return err.response.data
-    })
-      .then(out => {
-      this.emit('resource', {resource, out})
-      return out
-    })
-  }
-
-  resourceToRequest(resource) {
-    const parts = resource.split("/");
-    const apiIdentifier = parts[1];
-    const routeIdentifier = parts[2];
-    const apiConfig = this.opts.apis[apiIdentifier]
-    let routeConfig = {}
-
-    if (!this.opts.apis[apiIdentifier]) {
-      throw new Error(`API "${apiIdentifier}" is not defined`)
-    }
-
-    if (this.opts.apis[apiIdentifier].route && this.opts.apis[apiIdentifier].route[routeIdentifier]) {
-      routeConfig = this.opts.apis[apiIdentifier].route[routeIdentifier]
-    }
-    parts.shift();
-    parts.shift();
-    const config = {
-      url: parts.join("/"),
-      ...Object.assign({}, apiConfig, routeConfig)
-    }
-    delete config.route
-    return config
-  }
 };
