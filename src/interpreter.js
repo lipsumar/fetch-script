@@ -183,7 +183,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
         if (nextResource) {
           return this.runResource(nextResource + ' ' + paginationMode, list)
         } else {
-          console.log('returning list', list.length)
+          //console.log('returning list', list.length)
           return list
         }
       })

@@ -4,14 +4,13 @@ const _ = require("lodash");
 const lexer = require("./lexer");
 const parser = require("./parser");
 const Interpreter = require("./interpreter");
-const TypeList = require("./types/List");
 
 module.exports = class FetchScript extends EventEmitter {
   constructor(opts) {
     super();
     this.opts = opts || {};
     this.interpreter = new Interpreter(this.opts);
-    this.axios = this.interpreter.axios
+    this.axios = this.interpreter.axios // expose axios for mocks in testing
     this.interpreter.on("resource", res => {
       this.emit("interpreter:resource", res);
     });
@@ -44,17 +43,6 @@ module.exports = class FetchScript extends EventEmitter {
       prom = this.interpreter
         .interpret(ast)
         .then(out => {
-
-          //console.dir(interpreter.vars, {colors: true, depth: 3})
-          /*out.forEach(outLine => {
-            if (outLine instanceof TypeList) {
-              console.log(outLine);
-            } else if (outLine instanceof Array) {
-              console.log(outLine.join("\n"));
-            } else {
-              console.log(outLine);
-            }
-          });*/
           return out;
         })
     } catch (err) {
