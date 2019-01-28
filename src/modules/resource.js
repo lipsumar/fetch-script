@@ -26,6 +26,7 @@ module.exports = class ModuleResource extends EventEmitter {
       }
       return this.resource(expanded[0]).then(data => {
         const dataOri = data
+        console.log(data)
         //console.log('pushing to list', list.length)
         try {
           data = resourceConfig.accessor ? resourceConfig.accessor(data) : data
@@ -43,6 +44,7 @@ module.exports = class ModuleResource extends EventEmitter {
         const nextResource = resourceConfig.paginator(dataOri, list.page)
         //console.log('next res', nextResource)
         if (nextResource) {
+          console.log({nextResource})
           return this.run(nextResource + ' ' + paginationMode, list)
         } else {
           //console.log('returning list', list.length)
@@ -61,12 +63,21 @@ module.exports = class ModuleResource extends EventEmitter {
   }
 
 
-  resourceToRequest(resource) {
+  resourceToRequest(resourceString) {
+    console.log({resourceString})
+    const [resource, options] = resourceString.split(' ')
     const parts = resource.split("/");
     const apiIdentifier = parts[1];
     const routeIdentifier = parts[2];
     const apiConfig = this.apisConfig[apiIdentifier]
     let routeConfig = {}
+
+    if(apiIdentifier === 'http:'){
+      parts.shift();
+      return {
+        url: parts.join("/")
+      }
+    }
 
     if (!this.apisConfig[apiIdentifier]) {
       throw new Error(`API "${apiIdentifier}" is not defined`)
@@ -75,14 +86,28 @@ module.exports = class ModuleResource extends EventEmitter {
     if (this.apisConfig[apiIdentifier].route && this.apisConfig[apiIdentifier].route[routeIdentifier]) {
       routeConfig = this.apisConfig[apiIdentifier].route[routeIdentifier]
     }
+
+    if(routeConfig.route){
+      // meta route
+      const request = {
+        url: routeConfig.route,
+        ...Object.assign({}, apiConfig, routeConfig)
+      }
+      delete request.route // came from apiConfig, irrelavant for a single route
+      return request
+    }
+
+
     parts.shift();
     parts.shift();
-    const config = {
+    const request = {
       url: parts.join("/"),
       ...Object.assign({}, apiConfig, routeConfig)
     }
-    delete config.route
-    return config
+    delete request.route // came from apiConfig, irrelavant for a single route
+
+
+    return request
   }
 
 
@@ -99,7 +124,7 @@ module.exports = class ModuleResource extends EventEmitter {
       }
       return req.module({params})
     }
-    //console.log('request->', req)
+    console.log('request->', req)
     return this.axios.request(req).then(data => {
       if (typeof data.data === 'string' && data.data[0] === '<') { // smells like xml
         return new Promise((resolve,reject) => {

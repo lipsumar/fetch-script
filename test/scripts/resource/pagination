@@ -1,0 +1,12 @@
+$options.apis.sample.baseURL = "http://jsonplaceholder.typicode.com"
+
+$options.apis.sample.route.usersPaginated = {
+  route: 'users',
+  paginator: (resp, page) => resp.length===10 ? `/sample/users/?page=${page+1}` : null
+}
+
+one = /sample/users/1
+onepage = /sample/users
+all = /sample/usersPaginated
+
+

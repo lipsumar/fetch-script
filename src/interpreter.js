@@ -1,43 +1,40 @@
-const Promise = require("bluebird");
-const EventEmitter = require("events");
-const lib = require("./lib");
-const deepGetSet = require("deep-get-set");
-const dotty = require("dotty");
-const jsonpath = require("jsonpath");
+const Promise = require('bluebird')
+const EventEmitter = require('events')
+const lib = require('./lib')
+const deepGetSet = require('deep-get-set')
+const dotty = require('dotty')
+const jsonpath = require('jsonpath')
 deepGetSet.p = true
 const stringLexer = require('./stringLexer')
 const fs = require('fs')
 const moduleCsv = require('./modules/csv')
-const ModuleResource = require('./modules/resource')
-
-
+const ModuleResource = require('./modules/resource2')
 
 module.exports = class FetchScriptInterpreter extends EventEmitter {
-
-  constructor(opts) {
-    super();
+  constructor (opts) {
+    super()
     this.vars = {
       ...moduleCsv.vars
     }
     this.opts = Object.assign({ apis: {} }, opts || {})
-    this.moduleResource = new ModuleResource(this.opts.apis)
+    this.moduleResource = new ModuleResource(this.opts.apis, this.runJavascript.bind(this))
     this.outs = []
   }
 
-  setVariables(vars){
+  setVariables (vars) {
     Object.assign(this.vars, vars)
   }
 
-  interpret(ast, opts) {
+  interpret (ast, opts) {
     this.outs = []
-    if (ast.type === "statements") {
+    if (ast.type === 'statements') {
       return this.runStatements(ast.statements)
     } else {
       throw new Error('Expected an AST starting with a node of type "statements", got "' + ast.type + '"')
     }
   }
 
-  runStatements(statements) {
+  runStatements (statements) {
     let i = 0
     const next = () => {
       if (i === statements.length || this.stop) {
@@ -51,7 +48,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     return next()
   }
 
-  runStatement(statement) {
+  runStatement (statement) {
     switch (statement.type) {
       case 'assignment':
         return this.runAssignment(statement)
@@ -64,7 +61,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
               this.outs.push(out)
               this.emit('output', out)
             } else {
-              return new Promise((resolve,reject) => {
+              return new Promise((resolve, reject) => {
                 fs.writeFile(
                   this.runJavascript(statement.to, true),
                   typeof out === 'string' ? out : JSON.stringify(out),
@@ -122,38 +119,38 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     }
   }
 
-  runAssignment(statement) {
+  runAssignment (statement) {
     this.lastAssignedSymbol = statement.symbol
     return this.assign(statement.symbol, statement.value)
   }
 
-  runSubAssignment(symbol, subsymbol, statement) {
+  runSubAssignment (symbol, subsymbol, statement) {
     const toAssign = this.vars[symbol]
     let done = 0
     return Promise.all(
       Promise.resolve(toAssign).map((a, i) => {
         const replacedStatement = Object.assign({}, statement)
-        replacedStatement.value = statement.value.split('@').join(symbol + '[' + i + ']') //replace(/@/, symbol + '[' + i + ']')
+        replacedStatement.value = statement.value.split('@').join(symbol + '[' + i + ']') // replace(/@/, symbol + '[' + i + ']')
         return this.runStatement(replacedStatement).then(out => {
           done++
-          process.stdout.write(' ' + lib.drawprogressBar(done, toAssign.length) +'        \r')
+          process.stdout.write(' ' + lib.drawprogressBar(done, toAssign.length) + '        \r')
           return out
         })
-      }, {concurrency:10})
+      }, { concurrency: 10 })
     ).then(results => {
-      process.stdout.write(' '.repeat(process.stdout.columns-1)+'\r')
+      process.stdout.write(' '.repeat(process.stdout.columns - 1) + '\r')
       toAssign.forEach((a, i) => {
         toAssign[i][subsymbol] = results[i]
       })
     })
   }
 
-  runString(string) {
+  runString (string) {
     const expanded = this.expandResources([string])
-    return Promise.resolve(expanded.length===1 ? expanded[0] : expanded)
+    return Promise.resolve(expanded.length === 1 ? expanded[0] : expanded)
   }
 
-  runJavascript(jsCode, sync = false) {
+  runJavascript (jsCode, sync = false) {
     const args = Object.keys(this.vars)
     args.push('require')
     args.push('return ' + jsCode)
@@ -170,7 +167,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     return sync ? out : Promise.resolve(out)
   }
 
-  runLoop(statement) {
+  runLoop (statement) {
     return Promise.resolve(this.vars[statement.loopOver])
       .mapSeries(item => {
         this.vars[statement.loopAs] = item
@@ -178,7 +175,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
       })
   }
 
-  runCondition(statement) {
+  runCondition (statement) {
     const pass = this.runJavascript(statement.test, true)
     if (pass) {
       return this.runStatements(statement.statements)
@@ -186,38 +183,38 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     return Promise.resolve()
   }
 
-  expandResources(resources) {
+  expandResources (resources) {
     while (resources.filter(r => lib.hasVariables(r)).length > 0) {
-      resources = this.insertVariables(resources);
+      resources = this.insertVariables(resources)
     }
     return resources
   }
 
-  insertVariables(strs) {
-    let inserteds = [];
+  insertVariables (strs) {
+    let inserteds = []
     strs.forEach(str => {
-      const m = /\{([^{]+)\}/g.exec(str);
-      let inserted = null;
+      const m = /\{([^{]+)\}/g.exec(str)
+      let inserted = null
 
       if (m && m[1]) {
-        const expr = m[1];
-        const value = this.resolveExpression(expr, true);
+        const expr = m[1]
+        const value = this.resolveExpression(expr, true)
 
         if (value instanceof Array) {
-          inserted = value.map(v => str.split(m[0]).join(v));
+          inserted = value.map(v => str.split(m[0]).join(v))
         } else {
-          inserted = [str.split(m[0]).join(value)];
+          inserted = [str.split(m[0]).join(value)]
         }
       } else {
         // nothing to insert
-        inserted = [str];
+        inserted = [str]
       }
-      inserteds = inserteds.concat(inserted);
-    });
-    return inserteds;
+      inserteds = inserteds.concat(inserted)
+    })
+    return inserteds
   }
 
-  mergeOutputArrays(outs) {
+  mergeOutputArrays (outs) {
     const arrayMaster = outs.find(o => o instanceof Array)
     return arrayMaster.map((master, i) => {
       return outs.map(o => {
@@ -229,23 +226,22 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     })
   }
 
-  resolveExpression(expression, sync = false) {
+  resolveExpression (expression, sync = false) {
     // expression is simply a variable name
-    if (typeof this.vars[expression] !== "undefined") {
+    if (typeof this.vars[expression] !== 'undefined') {
       if (sync) return this.vars[expression]
-      return Promise.resolve(this.vars[expression]);
+      return Promise.resolve(this.vars[expression])
     }
 
     // expression is probably json path
     try {
-      const values = jsonpath.query(this.vars, "$." + expression);
+      const values = jsonpath.query(this.vars, '$.' + expression)
       if (sync) return values
-      return Promise.resolve(values);
+      return Promise.resolve(values)
     } catch (err) { }
   }
 
-
-  assign(symbol, statement) {
+  assign (symbol, statement) {
     return this.runStatement(statement).then(out => {
       if (symbol[0] === '$') {
         if (symbol === '$') {
@@ -262,14 +258,12 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
         symbol = symbol.replace(/\[([0-9]+)\]/, '.$1')
         dotty.put(this.vars, symbol, out)
       }
-
     })
   }
 
-  symbol(symbol) {
+  symbol (symbol) {
     return Promise.resolve(
       typeof this.vars[symbol] !== 'undefined' ? this.vars[symbol] : symbol
     )
   }
-
-};
+}

@@ -1,0 +1,24 @@
+[
+  {
+    "id": 11,
+    "name": "Ted Haschof",
+    "username": "teddy",
+    "email": "Bizarre@april.biz",
+    "address": {
+      "street": "Some street",
+      "suite": "Apt. 123",
+      "city": "Gwenborough",
+      "zipcode": "92998-3874",
+      "geo": {
+        "lat": "-37.3159",
+        "lng": "81.1496"
+      }
+    }
+  },
+  {
+    "id": 12,
+    "name": "Lenny Krakra",
+    "username": "Lekrodox",
+    "email": "legradox@bouya.tv"
+  }
+]
