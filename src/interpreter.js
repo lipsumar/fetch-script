@@ -3,18 +3,18 @@ const EventEmitter = require('events')
 const lib = require('./lib')
 const deepGetSet = require('deep-get-set')
 const dotty = require('dotty')
-const jsonpath = require('jsonpath')
+const {JSONPath} = require("jsonpath-plus");
 deepGetSet.p = true
 const stringLexer = require('./stringLexer')
 const fs = require('fs')
-const moduleCsv = require('./modules/csv')
 const ModuleResource = require('./modules/resource2')
+//const moduleCsv = require('./modules/csv.js')
 
 module.exports = class FetchScriptInterpreter extends EventEmitter {
   constructor (opts) {
     super()
     this.vars = {
-      ...moduleCsv.vars
+      //...moduleCsv.vars
     }
     this.opts = Object.assign({ apis: {} }, opts || {})
     this.moduleResource = new ModuleResource(this.opts.apis, this.runJavascript.bind(this))
@@ -155,7 +155,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     args.push('require')
     args.push('return ' + jsCode)
     const argv = Object.keys(this.vars).map(n => this.vars[n])
-    argv.push(require)
+    //argv.push(require)
     let out = null
     const f = new Function(...args)
     try {
@@ -235,10 +235,10 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
 
     // expression is probably json path
     try {
-      const values = jsonpath.query(this.vars, '$.' + expression)
+      const values = JSONPath("$." + expression, this.vars)
       if (sync) return values
       return Promise.resolve(values)
-    } catch (err) { }
+    } catch (err) { console.log(err) }
   }
 
   assign (symbol, statement) {
