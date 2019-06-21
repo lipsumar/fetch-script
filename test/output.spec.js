@@ -13,7 +13,7 @@ describe("Output", () => {
     let output = null;
     let undoMock = null;
     before(done => {
-      undoMock = lib.mockSampleApi(fetchScript.axios);
+      undoMock = lib.mockSampleApi(fetchScript.interpreter.moduleResource.axios);
       fetchScript.executeCode(code).then((out) => {
         output = out
         done();

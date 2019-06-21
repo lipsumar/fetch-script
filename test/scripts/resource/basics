@@ -1,0 +1,18 @@
+$options.apis.sample.baseURL = "http://jsonplaceholder.typicode.com"
+
+# fetch urls
+one = /sample/users/1
+multi = /sample/users
+withoutSetupApi = /http://some-api.org/route
+
+# dynamic resource, single element
+id = 3
+dynOne = /sample/users/{id}
+
+# dynamic resource, multiple elements (expanded resource)
+ids = [2, 5, 6]
+dynMulti = /sample/users/{ids}
+
+
+
+
