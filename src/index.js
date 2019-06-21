@@ -1,4 +1,3 @@
-const Promise = require("bluebird");
 const EventEmitter = require("events");
 const _ = require("lodash");
 const lexer = require("./lexer");

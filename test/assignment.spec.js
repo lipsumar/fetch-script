@@ -26,8 +26,8 @@ describe("Assignment", () => {
       undoMock()
     });
     it("should assign js", () => {
-      expect(vars.a).to.equal("foo is bar");
-      expect(vars.b).to.equal("foo is bar");
+      expect(vars.a, 'a is set').to.equal("foo is bar");
+      expect(vars.b, 'b is set').to.equal("foo is bar");
       expect(vars.c).to.equal("foo is bar and it smells nice");
     });
     it("should assign resources", () => {

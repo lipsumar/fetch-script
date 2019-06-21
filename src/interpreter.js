@@ -3,7 +3,7 @@ const EventEmitter = require("events");
 const lib = require("./lib");
 const deepGetSet = require("deep-get-set");
 const dotty = require("dotty");
-const jsonpath = require("jsonpath");
+const {JSONPath} = require("jsonpath-plus");
 deepGetSet.p = true
 const axios = require("axios"); //@TODO move to module
 const xml2js = require('xml2js')//@TODO move to module
@@ -12,7 +12,7 @@ const parseXML = xmlParser.parseString
 const TypeList = require('./types/List')
 const stringLexer = require('./stringLexer')
 const fs = require('fs')
-const moduleCsv = require('./modules/csv')
+//const moduleCsv = require('./modules/csv.js')
 
 
 
@@ -21,7 +21,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
   constructor(opts) {
     super();
     this.vars = {
-      ...moduleCsv.vars
+      //...moduleCsv.vars
     }
     this.axios = axios.create()
     this.opts = Object.assign({ apis: {} }, opts || {})
@@ -212,7 +212,7 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
     args.push('require')
     args.push('return ' + jsCode)
     const argv = Object.keys(this.vars).map(n => this.vars[n])
-    argv.push(require)
+    //argv.push(require)
     //console.log(jsCode)
     let out = null
     const f = new Function(...args)
@@ -295,10 +295,12 @@ module.exports = class FetchScriptInterpreter extends EventEmitter {
 
     // expression is probably json path
     try {
-      const values = jsonpath.query(this.vars, "$." + expression);
+      const values = JSONPath("$." + expression, this.vars);
       if (sync) return values
       return Promise.resolve(values);
-    } catch (err) { }
+    } catch (err) { 
+      console.log(err)
+    }
   }
 
 
